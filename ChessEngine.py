@@ -19,6 +19,7 @@ class GameState():
         self.whiteToMove=True
         self.movelog=[]
         self.wb_movelog={}
+        self.undo_movelog = []
         self.white_captured=[]
         self.black_captured=[]
         self.moveFunctions={"P":self.get_pawn_moves,"R":self.get_rook_moves,"B":self.get_bishop_moves,
@@ -36,39 +37,60 @@ class GameState():
         self.board=np.rot90(self.board,2)
     
     def makemove(self,move):
+        piece = move.piece_moved
+        target_color = move.piece_moved_to[0]
 
-        piece_moved=self.board
-        if move.piece_moved_to!="--":
-            if move.piece_moved_to[0]=="w":
-                self.black_captured.append(move.piece_moved_to)
-                if move.piece_moved=="bK":
-                    self.whiteKingLocation=(move.endRow,move.endCol)
-            else:
-                self.white_captured.append(move.piece_moved_to)
-                if move.piece_moved=="wK":
-                    self.whiteKingLocation=(move.endRow,move.endCol)                
+        if target_color=="w":
+            self.black_captured.append(move.piece_moved_to)
+
+        elif target_color=="b":
+            self.white_captured.append(move.piece_moved_to)
+
+        
+        if piece=="bK":
+            self.blackKingLocation=(move.endRow,move.endCol) 
+        
+        elif piece=="wK":
+            self.whiteKingLocation=(move.endRow,move.endCol) 
+       
+                               
         self.board[move.startRow][move.startColumn]="--"
-        self.board[move.endRow][move.endColumn]=move.piece_moved
+        self.board[move.endRow][move.endColumn]=piece
         self.movelog.append(move)
         self.whiteToMove=not self.whiteToMove
 
                                  
     def undomove(self):
-        if self.movelog!=[]:
-            move=self.movelog.pop()
-            t_piece=move.piece_moved_to
-            if t_piece[0]=="b" and t_piece!="--":
-                self.black_captured.pop()
-            elif t_piece[0]=="w" and t_piece!="--":
-                self.white_captured.pop()
-            if move.piece_moved=="wK":
-                self.whiteKingLocation=(move.startRow,move.startCol)
-            elif move.piece_moved=="bK":
-                self.blackKingLocation=(move.startRow,move.startCol)
-            self.board[move.startRow][move.startColumn]=move.piece_moved
-            self.board[move.endRow][move.endColumn]=move.piece_moved_to
+        if not self.movelog:
+            print("No move to undo!")
+            return
+        
+        move=self.movelog.pop()
+        t_piece=move.piece_moved_to
+        self.undo_movelog.append(move)
+        
+        if t_piece[0]=="b" and t_piece!="--":
+            self.white_captured.pop()
+        elif t_piece[0]=="w" and t_piece!="--":
+            self.black_captured.pop()
+        if move.piece_moved=="wK":
+            self.whiteKingLocation=(move.startRow,move.startCol)
+        elif move.piece_moved=="bK":
+            self.blackKingLocation=(move.startRow,move.startCol)
+        self.board[move.startRow][move.startColumn]=move.piece_moved
+        self.board[move.endRow][move.endColumn]=move.piece_moved_to
+        
+        self.whiteToMove=not self.whiteToMove
+        
             
-            self.whiteToMove=not self.whiteToMove
+    def resumemove(self):
+        if not self.undo_movelog:
+            print("No move ahead!")
+            return
+        
+        move = self.undo_movelog.pop()
+        self.makemove(move)
+        
 
     def getValidMoves(self):
 
