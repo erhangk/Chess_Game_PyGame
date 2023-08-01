@@ -5,8 +5,19 @@ responsible for determining the valid moves at the current state.It will also ke
 
 from sys import getallocatedblocks
 import numpy as np
+
 class GameState():
     def __init__(self):
+        self.resetTable()
+        self.rookDirections = ((-1,0),(0,-1),(1,0),(0,1))
+        self.knightDirections=((-2,1),(-2,-1),(-1,-2),(-1,2),(1,2),(1,-2),(2,1),(2,-1))
+        self.bishopDirections=((1,1),(1,-1),(-1,-1),(-1,1))
+        self.kingDirections=((-1,-1),(-1,0),(-1,1),(0,-1),(0,1),(1,-1),(1,0),(1,1))
+
+        self.moveFunctions={"P":self.get_pawn_moves,"R":self.get_rook_moves,"B":self.get_bishop_moves,
+                            "N":self.get_knight_moves,"K":self.get_king_moves,"Q":self.get_queen_moves}
+
+    def resetTable(self):
         self.board=np.array([
         ["bR","bN","bB","bQ","bK","bB","bN","bR"],
         ["bP","bP","bP","bP","bP","bP","bP","bP"],
@@ -22,8 +33,6 @@ class GameState():
         self.undo_movelog = []
         self.white_captured=[]
         self.black_captured=[]
-        self.moveFunctions={"P":self.get_pawn_moves,"R":self.get_rook_moves,"B":self.get_bishop_moves,
-                            "N":self.get_knight_moves,"K":self.get_king_moves,"Q":self.get_queen_moves}
 
         #FOR CHECK-MATE OPERATIONS                    
         self.whiteKingLocation=(7,4)              
@@ -31,7 +40,6 @@ class GameState():
         self.inCheck=False
         self.pins=[]
         self.checks=[]
-
 
     def rotate(self):
         self.board=np.rot90(self.board,2)
@@ -48,16 +56,18 @@ class GameState():
 
         
         if piece=="bK":
-            self.blackKingLocation=(move.endRow,move.endCol) 
+            self.blackKingLocation=(move.endRow,move.endColumn) 
         
         elif piece=="wK":
-            self.whiteKingLocation=(move.endRow,move.endCol) 
+            self.whiteKingLocation=(move.endRow,move.endColumn) 
        
                                
         self.board[move.startRow][move.startColumn]="--"
         self.board[move.endRow][move.endColumn]=piece
         self.movelog.append(move)
         self.whiteToMove=not self.whiteToMove
+        
+        
 
                                  
     def undomove(self):
@@ -117,7 +127,6 @@ class GameState():
         return self.getAllPossibleMoves()
 
 
-
     def pins_checks(self):
         pins,checks,inCheck=[],[],False
         if self.whiteToMove:
@@ -141,10 +150,18 @@ class GameState():
                         conditions=(0<=i<=3 and piece=="R") or (4<=i<=7 and piece=="B")
                         if conditions:
                             pass
-                        
-
-                    
-
+        """
+        r,c = move.startRow,move.startColumn
+        piece = self.board[r][c][1]
+        
+        enemyColor="b" if self.whiteToMove else "w"
+        for d,l in self.rookDirections:
+            for i in range(1,8):
+                endRow=r+d*i
+                endCol=c+l*i
+                if 0<=endRow<=7 and 0<=endCol<=7:
+                    endPiece=self.board[endRow][endCol]
+        """
 
     def getAllPossibleMoves(self):
         moves=[]
@@ -155,8 +172,8 @@ class GameState():
                     piece=self.board[r][c][1]
                     self.moveFunctions[piece](r,c,moves)
         return moves
-        
 
+    
     def get_pawn_moves(self,r,c,moves):
         if self.whiteToMove:
             try:
@@ -186,9 +203,8 @@ class GameState():
 
 
     def get_rook_moves(self,r,c,moves):
-        directions=((-1,0),(0,-1),(1,0),(0,1))
         enemyColor="b" if self.whiteToMove else "w"
-        for d,l in directions:
+        for d,l in self.rookDirections:
             for i in range(1,8):
                 endRow=r+d*i
                 endCol=c+l*i
@@ -204,9 +220,8 @@ class GameState():
 
 
     def get_knight_moves(self,r,c,moves):
-        directions=((-2,1),(-2,-1),(-1,-2),(-1,2),(1,2),(1,-2),(2,1),(2,-1))
         teamColor="w" if self.whiteToMove else "b"
-        for d,l in directions:
+        for d,l in self.knightDirections:
             endRow=r+d
             endCol=c+l
             if 0<=endRow<=7 and 0<=endCol<=7:
@@ -216,9 +231,8 @@ class GameState():
 
 
     def get_bishop_moves(self,r,c,moves):
-        directions=((1,1),(1,-1),(-1,-1),(-1,1))
         enemyColor="b" if self.whiteToMove else "w"
-        for d,l in directions:
+        for d,l in self.bishopDirections:
             for i in range(1,8):
                 endRow=r+d*i
                 endCol=c+l*i
@@ -239,9 +253,8 @@ class GameState():
 
 
     def get_king_moves(self,r,c,moves):
-        kingMoves=((-1,-1),(-1,0),(-1,1),(0,-1),(0,1),(1,-1),(1,0),(1,1))
         teamColor="w" if self.whiteToMove else "b"
-        for d,l in kingMoves:
+        for d,l in self.kingDirections:
             endRow=r+d
             endCol=c+l
             if 0<=endRow<=7 and 0<=endCol<=7:
@@ -251,26 +264,6 @@ class GameState():
                 
     def pawn_promotion(self,r,c):
         pass
-
-
-
-    def reset_table(self):
-        self.def_board=np.array(
-        [["bR","bN","bB","bQ","bK","bB","bN","bR"],
-        ["bP","bP","bP","bP","bP","bP","bP","bP"],
-        ["--","--","--","--","--","--","--","--"],
-        ["--","--","--","--","--","--","--","--"],
-        ["--","--","--","--","--","--","--","--"],
-        ["--","--","--","--","--","--","--","--"],
-        ["wP","wP","wP","wP","wP","wP","wP","wP"],
-        ["wR","wN","wB","wQ","wK","wB","wN","wR"]])
-        for i in range(len(self.board)):
-            self.board[i]=self.def_board[i].copy()
-        self.whiteToMove=True
-        self.movelog=[]
-        self.wb_movelog={}
-        self.white_captured=[]
-        self.black_captured=[]
 
 
 class Move():
@@ -291,12 +284,15 @@ class Move():
   
     def get_chess_notation(self):
         return self.get_rank_letter(self.startRow,self.startColumn)+" to "+self.get_rank_letter(self.endRow,self.endColumn)
-    
+    """
     def get_chess_notation_pieces(self):
-        return self.pieces[self.piece_moved[1]]+" to "+self.get_rank_letter(self.endRow,self.endColumn)
-
+        return f"{self.pieces[self.piece_moved[1]]} to {self.get_rank_letter(self.endRow,self.endColumn)}"
+    """
     def get_rank_letter(self,r,c):
         return self.colmn_to_letter[c]+ self.rows_to_ranks[r]
 
+    def __str__(self):
+        return f"{self.pieces[self.piece_moved[1]]} to {self.get_rank_letter(self.endRow,self.endColumn)}"
+        
     def __eq__(self,other):
         return (self.startRow,self.startColumn,self.endRow,self.endColumn)==(other.startRow,other.startColumn,other.endRow,other.endColumn)

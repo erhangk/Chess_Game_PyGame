@@ -1,7 +1,6 @@
 """
-This is our main driver file. It will be responsible for handling user input and displaying the current GameState object.
+This is the main driver file. It will be responsible for handling user input and displaying the current GameState object.
 """
-
 
 import pygame as p
 import ChessEngine
@@ -16,9 +15,7 @@ pieces=["wP","bP","wR","wK","wB","wQ","wK","wB",  #ALL THE PIECES ON THE BOARD
         "wN","wR","bR","bN","bB","bQ","bK","bB","bN","bR"]
 
 IMAGES={}
-
 rect_colors = ("gray","white")
-
 draw = Shapes.draw(HEIGHT,DIM,rect_colors)
 
 def main():
@@ -31,12 +28,10 @@ def main():
     valid_moves=gs.getValidMoves()
     moved=False #Flag Variable
     
-    
     load_images() 
     running=True
     sq_selected=()
     playerclicks=[]
-    selected = False
     
     while running:
         for i in p.event.get():
@@ -53,31 +48,26 @@ def main():
                     sq_selected=row,column
                     if len(playerclicks)==1 and gs.board[row][column][0]==teamColor:
                         playerclicks[0]=sq_selected
+                    else:
+                        playerclicks.append(sq_selected)
                         
-                    playerclicks.append(sq_selected)
-                    selected = True
-                    print(row,column)
-
-                
+                """
                 else:
                     sq_selected=()
                     playerclicks=[]
-                    selected = False
-                    
+                """            
                 if len(playerclicks)==2:  
-                    startRow=playerclicks[0][0]
-                    startCol=playerclicks[0][1]
+                    startRow,startCol=playerclicks[0]
                     if gs.board[startRow][startCol][0]==teamColor:
                         move=ChessEngine.Move(playerclicks[0],playerclicks[1],gs.board)
-                        print(move.get_chess_notation_pieces())
                         if move in valid_moves:
                             gs.makemove(move) 
                             moved=True
+                            print(move)
 
                     sq_selected=()
                     playerclicks=[]
-                    selected = False
-
+                    
             elif i.type==p.KEYDOWN:#UNDO MOVE
                 
                 if i.key==p.K_q: #QUIT
@@ -88,41 +78,33 @@ def main():
                 elif i.key==p.K_RIGHT: #RESUME MOVE
                     gs.resumemove()
                     moved=True
+                elif i.key==p.K_r:
+                    resetTable(gs)
+                    moved=True
 
 
         if moved:
             valid_moves=gs.getValidMoves()
-            moved=False
+            moved=False        
         
-        DrawBoard(screen)
-        
-        if selected:
-            draw.draw_rect_alpha(screen, (0, 0, 255, 50), (column*SQ_SIZE, row*SQ_SIZE, SQ_SIZE, SQ_SIZE))
-            
-        DrawPieces(screen,gs.board)
-
-        
-        #Draw_Game_State(screen,gs)
+        Draw_Game_State(screen,gs,sq_selected,valid_moves)
         clock.tick(MAX_FPS)  
         
         x, y = get_square_under_mouse()
         highlight_mouse_pos(screen,x,y)
-        
-        
-        if selected:
-            highlight_target_square(screen,5,6)
-            
-
 
         p.display.flip()
-        
-        
-        
+
+
 def load_images():
-    for piece in pieces:
-        IMAGES[piece]=p.transform.scale(p.image.load("images/"+piece+".png"),(SQ_SIZE ,SQ_SIZE))
-
-
+    path = "images/Classic/"
+    try:
+        for piece in pieces:
+            IMAGES[piece]=p.transform.scale(p.image.load(path+piece+".svg"),(SQ_SIZE ,SQ_SIZE))
+    except FileNotFoundError:
+        for piece in pieces:
+            IMAGES[piece]=p.transform.scale(p.image.load(path+piece+".png"),(SQ_SIZE ,SQ_SIZE))
+        
 def get_square_under_mouse():
     mouse_pos=p.Vector2(p.mouse.get_pos())
     return (int(v // SQ_SIZE) for v in mouse_pos) #RETURNING X AND Y COORDINATES OF MOUSE
@@ -130,13 +112,23 @@ def get_square_under_mouse():
 def highlight_mouse_pos(screen,x,y):
     draw.draw_rect(screen,x,y)
     
-def highlight_target_square(screen,r,c):
-    draw.draw_circle_alpha(screen,(0,0,0,100),((r+1/2)*SQ_SIZE,(c+1/2)*SQ_SIZE),SQ_SIZE/4)
-
+def highlight_current_square(screen,sq_selected,valid_moves):
+    if not sq_selected:
+        return
+    r,c = sq_selected
+    surface = p.Surface((SQ_SIZE,SQ_SIZE))
+    surface.set_alpha(100)
+    surface.fill(p.Color((121, 173, 253)))
+    screen.blit(surface, (c*SQ_SIZE,r*SQ_SIZE))
     
-def Draw_Game_State(screen,gs):
+    for move in valid_moves:
+        if (move.startRow == r) and (move.startColumn == c):
+            screen.blit(surface, (move.endColumn*SQ_SIZE,move.endRow*SQ_SIZE))
+      
+def Draw_Game_State(screen,gs,sq_selected,valid_moves):
     #ORDER OF DRAWING BOARD AND PIECES IS IMPORTANT
     DrawBoard(screen)
+    highlight_current_square(screen,sq_selected,valid_moves)
     DrawPieces(screen,gs.board)
 
 """Draw the squares on 8x8 board"""
@@ -145,9 +137,7 @@ def DrawBoard(screen):
     for r in range(DIM):
         for c in range(DIM):
             color=colors[(r+c)%2]
-            p.draw.rect(screen,color,p.Rect(c*SQ_SIZE,r*SQ_SIZE,SQ_SIZE,SQ_SIZE))
-            #draw_rect_alpha(screen, (255, 255, 0, 128), (c*SQ_SIZE,r*SQ_SIZE,SQ_SIZE,SQ_SIZE))
-            
+            p.draw.rect(screen,color,p.Rect(c*SQ_SIZE,r*SQ_SIZE,SQ_SIZE,SQ_SIZE))            
             
 """Draw Piececs of the current state of board"""
 def DrawPieces(screen,board):
@@ -157,6 +147,9 @@ def DrawPieces(screen,board):
             if piece!="--":
                 screen.blit(IMAGES[piece],p.Rect(c*SQ_SIZE,r*SQ_SIZE,SQ_SIZE,SQ_SIZE))
 
+def resetTable(gs):
+    gs.resetTable()
+    
 
 """Saves last state of the board at "last state of the board.txt file"""
 def SaveBoardState(board):
@@ -164,7 +157,7 @@ def SaveBoardState(board):
     f.write(str(board.board))
     f.write("\n|\n|__white to move\n\n" if board.whiteToMove else "\n|\n|__black to move\n\n")
     f.close()
-
+    
 
 if __name__=='__main__':
     main()
