@@ -15,8 +15,9 @@ class draw:
         p.draw.rect(shape_surf, color, shape_surf.get_rect())
         surface.blit(shape_surf, rect)  
         
-
-        
+    def draw_circle(self,screen,color,x,y, SQ_SIZE):
+        p.draw.circle(screen, color,[x, y], SQ_SIZE/2, 5)
+ 
     def draw_circle_alpha(self,surface, color, center, radius):
         target_rect = p.Rect(center, (0, 0)).inflate((radius * 2, radius * 2))
         shape_surf = p.Surface(target_rect.size, p.SRCALPHA)

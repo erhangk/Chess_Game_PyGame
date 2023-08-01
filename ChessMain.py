@@ -112,7 +112,7 @@ def get_square_under_mouse():
 def highlight_mouse_pos(screen,x,y):
     draw.draw_rect(screen,x,y)
     
-def highlight_current_square(screen,sq_selected,valid_moves):
+def highlight_current_square(screen,board,sq_selected,valid_moves):
     if not sq_selected:
         return
     r,c = sq_selected
@@ -123,12 +123,18 @@ def highlight_current_square(screen,sq_selected,valid_moves):
     
     for move in valid_moves:
         if (move.startRow == r) and (move.startColumn == c):
-            screen.blit(surface, (move.endColumn*SQ_SIZE,move.endRow*SQ_SIZE))
+            endRow,endColumn = move.endRow, move.endColumn
+            screen.blit(surface, (endColumn*SQ_SIZE,endRow*SQ_SIZE))
+            
+            if board[endRow][endColumn] != "--":
+                draw.draw_circle(screen,(128,128,128),(endColumn+1/2)*SQ_SIZE,(endRow+1/2)*SQ_SIZE, SQ_SIZE)
+            
+
       
 def Draw_Game_State(screen,gs,sq_selected,valid_moves):
     #ORDER OF DRAWING BOARD AND PIECES IS IMPORTANT
     DrawBoard(screen)
-    highlight_current_square(screen,sq_selected,valid_moves)
+    highlight_current_square(screen,gs.board,sq_selected,valid_moves)
     DrawPieces(screen,gs.board)
 
 """Draw the squares on 8x8 board"""
