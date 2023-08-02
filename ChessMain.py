@@ -44,7 +44,7 @@ def main():
                 row,column=(mouse_pos[1]//SQ_SIZE,mouse_pos[0]//SQ_SIZE)
                 teamColor="w" if gs.whiteToMove else "b"
                 
-                if sq_selected!=(row,column):
+                if sq_selected!=(row,column) and not (len(playerclicks)==0 and gs.board[row][column] == "--"):
                     sq_selected=row,column
                     if len(playerclicks)==1 and gs.board[row][column][0]==teamColor:
                         playerclicks[0]=sq_selected
