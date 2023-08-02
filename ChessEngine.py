@@ -127,7 +127,8 @@ class GameState():
         return self.getAllPossibleMoves()
 
 
-    def pins_checks(self):
+    def pins_checks(self,move):
+        """
         pins,checks,inCheck=[],[],False
         if self.whiteToMove:
             teamcolor,enemycolor="w","b"
@@ -151,6 +152,7 @@ class GameState():
                         if conditions:
                             pass
         """
+        pins,checks,inCheck=[],[],False
         r,c = move.startRow,move.startColumn
         piece = self.board[r][c][1]
         
@@ -161,7 +163,7 @@ class GameState():
                 endCol=c+l*i
                 if 0<=endRow<=7 and 0<=endCol<=7:
                     endPiece=self.board[endRow][endCol]
-        """
+        
 
     def getAllPossibleMoves(self):
         moves=[]
